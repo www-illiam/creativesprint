@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>who are you</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #fafafa;
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      padding-top: 70px;
+    }
+    .card {
+      width: 320px;
+      background: white;
+      border: 1px solid #ccc;
+      padding: 20px;
+      text-align: center;
+    }
+    .card > * { transition: opacity 0.6s; }
+    .avatar-stack {
+      position: relative;
+      width: 160px;
+      height: 160px;
+      margin: 0 auto 12px;
+      border: 1px solid #ccc;
+      background: white;
+      overflow: hidden;
+    }
+    .avatar-stack svg { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
+    .ghost { opacity: 0.2; }
+    .glow svg:last-child { filter: drop-shadow(0 0 3px #fff) drop-shadow(0 0 10px #fff); }
+    h1 { font-size: 22px; margin: 0 0 4px; }
+    .bio { margin: 0 0 12px; color: #555; font-size: 14px; }
+    .tags { margin-bottom: 18px; min-height: 22px; }
+    .tag {
+      display: inline-block;
+      font-size: 12px;
+      padding: 2px 8px;
+      margin: 2px;
+      background: #eee;
+      border-radius: 3px;
+    }
+    button {
+      font-size: 15px;
+      padding: 8px 20px;
+      cursor: pointer;
+    }
+    .flicker { animation: flick 0.35s steps(4) 1; }
+    @keyframes flick { 50% { opacity: 0.15; } }
+  </style>
+</head>
+<body>
+
+  <div class="card" id="card">
+    <div class="avatar-stack" id="avatar"></div>
+    <h1 id="name">…</h1>
+    <p class="bio" id="bio"></p>
+    <div class="tags" id="tags"></div>
+    <button id="commit">this is me</button>
+  </div>
+
+  <script>
+    const firstNames = ["William","Matt","Joe","Dylan","Aarush","Jay","Emma","Olivia","Sophia","Mia","Zendaya","Margot","Sydney","Florence","Jenna","Sabrina"];
+    const lastNames  = ["Smith","Johnson","Brown","Jones","Garcia","Miller","Davis","Wilson","Taylor","Anderson","Thomas","Moore","Martin","Lee","Clark","Walker"];
+    const interests  = [
+      "clash royale","baking","drawing","painting","running",
+      "gym","fashion","powerlifting","acting","movies",
+      "photography","music","writing","thrifting","anime",
+      "family guy","the simpsons","knitting","hiking","true crime podcasts",
+      "wordle","pottery","chess","dancing","basketball"
+    ];
+    const bioTemplates = [
+      "ask me abt {i}",
+      "{i} is my whole personality lol",
+      "i love {i}",
+      "no bio yet",
+      "uwo 27",
+      "toronto",
+      "idk what to put here"
+    ];
+
+    // button text + bios get more tired the more you click, card fades each stage
+    // [startsAt, buttonText, tiredBios, opacity]
+    const stages = [
+      [0,  "this is me",   null,                                      1],
+      [3,  "ok this one",  null,                                      0.85],
+      [6,  "sure",         null,                                      0.7],
+      [9,  "idk man",      ["uhhh", "..."],                           0.55],
+      [12, "...",          ["???", "pick already!", "still here?", "."], 0.4],
+      [20, "...",          [""],                                      0.22]
+    ];
+
+    const skins  = ["#f3d2b3","#dba877","#b57b4c","#8a5431","#5c3a24","#e8d5c4"];
+    const hairs  = ["#111","#4a2e14","#d6a94e","#b3321e","#777","#2b50d9","#1f9e5c","#e65fb8"];
+    const shirts = ["#ff5c1a","#2b50d9","#1f9e5c","#f2c230","#e65fb8","#111","#fff","#8e44ad"];
+    const bgs    = ["#ffd84d","#ff7a59","#5ed0a3","#5aa9ff","#c58cff","#ffb347","#f5f5f5"];
+
+    // this is what "you" ends up looking like. change whatever
+    const me = {
+      bg: "#000",
+      shirt: "#fff",
+      skin: "#fff",
+      hair: "#fff",
+      hairStyle: "bald",    // bald / girl / boy
+      mouth: "smile",       // smile / flat / frown / open
+      brows: false
+    };
+    // the order features lock in after you hit YOU
+    const lockOrder = ["bg","shirt","skin","hair","hairStyle","mouth","brows"];
+    const becomeAt = 20;
+
+    function rnd(n) { return Math.floor(Math.random() * n); }
+    function pick(arr) { return arr[rnd(arr.length)]; }
+    function pickN(arr, n) {
+      const copy = [...arr], out = [];
+      while (out.length < n && copy.length) out.push(copy.splice(rnd(copy.length), 1)[0]);
+      return out;
+    }
+
+    // locked = how many features from lockOrder are forced to match "me"
+    function randomAvatar(locked) {
+      const f = {
+        bg: pick(bgs),
+        shirt: pick(shirts),
+        skin: pick(skins),
+        hair: pick(hairs),
+        hairStyle: pick(["bald","girl","boy"]),
+        mouth: pick(["smile","flat","frown","open"]),
+        brows: Math.random() < 0.5
+      };
+      for (let i = 0; i < locked; i++) f[lockOrder[i]] = me[lockOrder[i]];
+
+      let s = `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">`;
+      s += `<rect width="100" height="100" fill="${f.bg}"/>`;
+
+      // torso + arms
+      s += `<rect x="30" y="72" width="40" height="40" fill="${f.shirt}"/>`;
+      s += `<rect x="18" y="74" width="11" height="30" fill="${f.skin}"/>`;
+      s += `<rect x="71" y="74" width="11" height="30" fill="${f.skin}"/>`;
+      // neck
+      s += `<rect x="44" y="66" width="12" height="8" fill="${f.skin}"/>`;
+      // head
+      s += `<rect x="28" y="24" width="44" height="44" fill="${f.skin}"/>`;
+
+      // hair
+      if (f.hairStyle === "girl") s += `<rect x="24" y="18" width="52" height="16" fill="${f.hair}"/><rect x="24" y="30" width="7" height="40" fill="${f.hair}"/><rect x="69" y="30" width="7" height="40" fill="${f.hair}"/>`;
+      if (f.hairStyle === "boy")  s += `<path d="M28 30 L28 18 L36 24 L42 12 L50 22 L58 12 L64 24 L72 18 L72 30 Z" fill="${f.hair}"/>`;
+
+      // brows
+      if (f.brows) s += `<rect x="35" y="34" width="10" height="3" fill="#111"/><rect x="55" y="34" width="10" height="3" fill="#111"/>`;
+
+      // eyes = censor bar
+      s += `<rect x="30" y="40" width="40" height="11" fill="#111"/>`;
+
+      // mouth
+      if (f.mouth === "smile") s += `<path d="M42 56 L44 59 L56 59 L58 56" stroke="#111" stroke-width="3" fill="none"/>`;
+      if (f.mouth === "flat")  s += `<rect x="43" y="57" width="14" height="3" fill="#111"/>`;
+      if (f.mouth === "frown") s += `<path d="M42 60 L44 57 L56 57 L58 60" stroke="#111" stroke-width="3" fill="none"/>`;
+      if (f.mouth === "open")  s += `<rect x="44" y="55" width="12" height="7" fill="#111"/>`;
+
+      s += `</svg>`;
+      return s;
+    }
+
+    let count = 0;
+    let current = null;
+    const previous = [];
+
+    const $ = id => document.getElementById(id);
+
+    function currentStage() {
+      let st = stages[0];
+      for (const s of stages) if (count >= s[0]) st = s;
+      return st;
+    }
+
+    // keep picking until its different from the last one
+    function pickNew(arr, last) {
+      if (arr.length < 2) return pick(arr);
+      let v;
+      do { v = pick(arr); } while (v === last);
+      return v;
+    }
+
+    // 0 before YOU, then climbs 1 per click until everything is locked
+    function lockedCount() {
+      return Math.max(0, Math.min(lockOrder.length, count - becomeAt));
+    }
+
+    function generate() {
+      const stage = currentStage();
+      const ints = pickN(interests, 3);
+      const bios = stage[2] || bioTemplates;
+
+      const first = pickNew(firstNames, current ? current.first : null);
+      const bioTemplate = pickNew(bios, current ? current.bioTemplate : null);
+
+      return {
+        first,
+        name: count >= becomeAt ? "YOU" : first + " " + pick(lastNames),
+        interests: ints,
+        bioTemplate,
+        bio: bioTemplate.replace("{i}", ints[0]),
+        avatar: randomAvatar(lockedCount())
+      };
+    }
+
+    function render() {
+      const stage = currentStage();
+      const locked = lockedCount();
+      const progress = locked / lockOrder.length; // 0 -> 1 as it becomes you
+
+      const ghosts = count >= 9 ? previous.slice(-3).map(p => p.avatar.replace("<svg", `<svg class="ghost"`)).join("") : "";
+      $("avatar").innerHTML = ghosts + current.avatar;
+      $("avatar").classList.toggle("glow", progress >= 1);
+      if (count >= 6 && progress < 1) {
+        $("avatar").classList.remove("flicker");
+        void $("avatar").offsetWidth; // this restarts the css animation dont ask
+        $("avatar").classList.add("flicker");
+      }
+
+      $("name").textContent = current.name;
+      $("bio").textContent  = current.bio;
+      $("tags").innerHTML   = count >= 12 ? "" : current.interests.map(i => `<span class="tag">${i}</span>`).join("");
+      document.title = count >= 12 ? "..." : current.name;
+
+      const btn = $("commit");
+      btn.textContent = stage[1];
+      if (count >= 12) {
+        btn.style.transform = `translate(${rnd(21)-10}px, ${rnd(9)-4}px)`;
+        btn.style.background = "#ddd";
+      }
+      if (progress >= 1) {
+        btn.textContent = "this is me";
+        btn.style.transform = "";
+        btn.style.background = "";
+      }
+
+      // fade out through the stages, then fade back in as it becomes you
+      let op = stage[3];
+      if (count >= becomeAt) op = stage[3] + (1 - stage[3]) * progress;
+      for (const id of ["avatar","bio","tags","commit"]) $(id).style.opacity = op;
+      $("name").style.opacity = count >= becomeAt ? 1 : op;
+    }
+
+    $("commit").onclick = () => {
+      previous.push(current);
+      count++;
+      current = generate();
+      render();
+    };
+
+    current = generate();
+    render();
+  </script>
+</body>
+</html>
